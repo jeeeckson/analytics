@@ -56,24 +56,24 @@ export const DeclineAnalysisTable: React.FC<DeclineAnalysisTableProps> = () => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('code');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+  // Determine primary currency from transactions
+  const primaryCurrency = useMemo(() => {
+    const declined = filteredTransactions.filter(t => t.status === 'declined');
+    if (declined.length === 0) return 'MXN';
+
+    const currencyCounts = declined.reduce((acc, t) => {
+      acc[t.currency] = (acc[t.currency] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(currencyCounts).sort(
+      ([, countA], [, countB]) => countB - countA
+    )[0][0];
+  }, [filteredTransactions]);
+
   // Compute and sort decline analysis
   const sortedDeclines = useMemo(() => {
     const analysis = getDeclineImpact(filteredTransactions);
-
-    // Determine primary currency from transactions
-    const primaryCurrency = useMemo(() => {
-      const declined = filteredTransactions.filter(t => t.status === 'declined');
-      if (declined.length === 0) return 'MXN';
-
-      const currencyCounts = declined.reduce((acc, t) => {
-        acc[t.currency] = (acc[t.currency] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      return Object.entries(currencyCounts).sort(
-        ([, countA], [, countB]) => countB - countA
-      )[0][0];
-    }, []);
 
     // Sort based on current sort column and direction
     const sorted = [...analysis].sort((a, b) => {
@@ -110,7 +110,7 @@ export const DeclineAnalysisTable: React.FC<DeclineAnalysisTableProps> = () => {
         : (compareB as number) - (compareA as number);
     });
 
-    return { sorted, primaryCurrency };
+    return sorted;
   }, [filteredTransactions, sortColumn, sortDirection]);
 
   /**
@@ -135,8 +135,7 @@ export const DeclineAnalysisTable: React.FC<DeclineAnalysisTableProps> = () => {
     return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
-  const declines = sortedDeclines.sorted;
-  const primaryCurrency = sortedDeclines.primaryCurrency as any;
+  const declines = sortedDeclines;
 
   // Empty state
   if (declines.length === 0) {
@@ -213,7 +212,7 @@ export const DeclineAnalysisTable: React.FC<DeclineAnalysisTableProps> = () => {
 
               {/* Total Amount */}
               <td className="px-6 py-4 text-right text-sm font-medium text-red-600">
-                {formatCurrency(decline.lostRevenue, primaryCurrency)}
+                {formatCurrency(decline.lostRevenue, primaryCurrency as any)}
               </td>
 
               {/* Percentage */}
