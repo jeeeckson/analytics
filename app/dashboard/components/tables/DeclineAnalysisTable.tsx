@@ -61,6 +61,7 @@ export const DeclineAnalysisTable: React.FC<DeclineAnalysisTableProps> = () => {
     const declined = filteredTransactions.filter(t => t.status === 'declined');
     if (declined.length === 0) return 'MXN';
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const currencyCounts = declined.reduce((acc, t) => {
       acc[t.currency] = (acc[t.currency] || 0) + 1;
       return acc;
